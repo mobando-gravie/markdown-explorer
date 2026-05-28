@@ -20,15 +20,16 @@ Alternatively, after the first refused launch, **System Settings → Privacy & S
 - **Two sidebar modes**
   - **Explore** — recursive lazy-loaded file tree, like Finder's column view.
   - **In progress** — historical project list; folders sorted by most-recent `.md` edit, with smart per-project hot/cold polling so the sidebar stays fresh without thrashing the filesystem.
-- **Rich-text copy** — select any part of the rendered preview, ⌘C, and paste into Gmail / Jira / Confluence / TextEdit RTF / Word with formatting preserved.
-- **Light/Dark toggle** — a toolbar button flips the whole app palette; persisted across launches.
-- **Syntax-highlighted code blocks** — ~38 languages via bundled highlight.js inside the WKWebView renderer.
+- **GFM rendering** — headings (with bottom-border on h1/h2), paragraphs, bold/italic/strikethrough, links, inline code, fenced code blocks, blockquotes, ordered/unordered/task lists, **tables**, thematic breaks, images. Parsed by [swift-markdown](https://github.com/swiftlang/swift-markdown) (Apple), rendered into a native `NSTextView` for crisp text and selection.
+- **Rich-text copy** — select any portion of the rendered preview, ⌘C, and paste into Gmail / Jira / Confluence / Apple Mail / TextEdit RTF / Pages / Word / Notion with formatting preserved. The pasteboard carries plain text + RTF + HTML.
+- **Light/Dark toggle** — a toolbar button (sun/moon) flips the whole app and the rendered doc palette; persisted across launches.
+- **Syntax-highlighted code blocks** — ~38 languages via bundled `highlight.js` (run through `JavaScriptCore`), tokens coloured directly into the attributed string. Light/dark palettes.
+- **Mermaid diagrams** — ` ```mermaid ` fenced blocks render as inline images via an off-screen `WKWebView` snapshot pipeline.
 - **Markdown link navigation** — internal `[link](./other.md)` references load the target file; external links open in your browser.
 - **Quick Open** (⌘⇧O) — fuzzy-search any `.md` file in the workspace.
+- **Find in document** — ⌘F brings up the native NSTextView find bar.
 - **Reveal in Finder** — right-click any file row in the sidebar.
 - **Recent folders** — `File → Open Recent` keeps the last 5 workspaces.
-- **GFM rendering** — headings, lists, task lists, blockquotes, code, tables, images, links — via [swift-markdown-ui](https://github.com/gonzalezreal/swift-markdown-ui).
-- **Mermaid diagrams** — ` ```mermaid ` fenced blocks render as live SVG via a bundled `mermaid.min.js` running in a `WKWebView` (no network at runtime).
 - **Sandboxed, with persisted folder access** — uses security-scoped bookmarks so the last folder reopens automatically across launches.
 - **Auto-discovery of project roots** — the In-progress mode walks each folder's ancestors looking for markers (`.git`, `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `Package.swift`, `Gemfile`, `composer.json`, `mix.exs`, `Makefile`, `CMakeLists.txt`, `pom.xml`, `build.gradle[.kts]`, `.hg`, `.svn`, `.idea`, `.vscode`, `node_modules`, `Pods`, `Carthage`, `vendor`, `.venv`, `venv`, `.gradle`, `*.xcodeproj/`) to label rows as `project › parent`.
 
@@ -99,15 +100,18 @@ A historical, per-project view of where the work is happening.
 
 ## Architecture
 
-Flat layering: views are thin, a single `@Observable` store orchestrates, two repositories own all IO.
+Flat layering: views are thin, a single `@Observable` store orchestrates, repositories own all IO and the rendering pipeline.
 
 ```
 ContentView (NavigationSplitView)
  ├─ SidebarView ─ switches by store.sidebarMode
- │   ├─ FileTreeView                     ← Explore mode
- │   └─ WIPFoldersView ─ WIPFolderRow    ← In progress mode
+ │   ├─ FileTreeView                       ← Explore mode
+ │   └─ WIPFoldersView ─ WIPFolderRow      ← In progress mode
  └─ DetailView ─ EmptyStateView | MarkdownDocumentView
-                                          └─ MermaidWebView (WKWebView)
+                                            └─ DocumentTextView (NSScrollView + RichCopyTextView)
+                                                  ← textStorage built by MarkdownASTRenderer
+                                                       ├─ SyntaxHighlighter   (highlight.js via JSContext)
+                                                       └─ MermaidRenderer     (offscreen WKWebView snapshot)
 
            ▲ reads / observes
            │
@@ -116,13 +120,14 @@ ContentView (NavigationSplitView)
    │ rootURL, selectedURL,        │
    │ expanded, childrenCache,     │
    │ sidebarMode, projectStates,  │
-   │ wipFolders, lastBootstrapAt  │
+   │ wipFolders, lastBootstrapAt, │
+   │ recents, isQuickOpenPresented│
    └──────────────────────────────┘
            │
            ▼ calls
    FileSystemRepository    BookmarkRepository
-   ├ presentOpenPanel      ├ save(URL)
-   ├ list(dir)             ├ restore() → URL?
+   ├ presentOpenPanel      ├ save(URL) / restore()
+   ├ list(dir)             ├ saveRecent / restoreRecents
    ├ read(file)            └ clear()
    ├ enumerateMarkdown(_)    (security-scoped bookmarks)
    └ isProjectRoot(_)
@@ -161,8 +166,7 @@ markdown-explorer/
 ## Acknowledgements
 
 - **[Tabler Icons](https://tabler.io/icons)** (MIT) — `folder-search` is the basis for the app icon.
-- **[markdown-it](https://github.com/markdown-it/markdown-it)** (MIT) — markdown → HTML parser.
-- **[github-markdown-css](https://github.com/sindresorhus/github-markdown-css)** (MIT) — rendered-doc styling.
+- **[swift-markdown](https://github.com/swiftlang/swift-markdown)** (Apache-2.0) — CommonMark + GFM parser feeding the AST renderer.
 - **[Mermaid](https://mermaid.js.org/)** (MIT) — diagram rendering inside fenced code blocks.
 - **[highlight.js](https://highlightjs.org/)** (BSD-3-Clause) — syntax highlighting (~38 languages).
 - **[xcodegen](https://github.com/yonaskolb/XcodeGen)** (MIT) — project file generation.

@@ -15,21 +15,14 @@ struct MarkdownDocumentView: View {
                 .padding(.bottom, 8)
             Divider()
             DocumentWebView(
-                html: html,
-                baseURL: fileURL.deletingLastPathComponent(),
-                onNavigate: { url in store.navigateToLink(url, from: fileURL) }
-            )
-        }
-    }
-
-    private var html: String {
-        MarkdownHTMLRenderer.render(
-            DocumentRenderRequest(
                 source: source,
                 baseURL: fileURL.deletingLastPathComponent(),
-                isDarkMode: preferDarkMode
+                isDarkMode: preferDarkMode,
+                onNavigate: { url in store.navigateToLink(url, from: fileURL) }
             )
-        ) ?? "<html><body><pre>Render failed</pre></body></html>"
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

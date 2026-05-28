@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html data-theme="__THEME__">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body {
+    margin: 0;
+    padding: 12px;
+    background: __BG__;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    color: __FG__;
+  }
+  .mermaid { text-align: center; }
+  .err {
+    color: #d33;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+<div class="mermaid" id="diagram">__SOURCE__</div>
+<script>__MERMAID_JS__</script>
+<script>
+(function() {
+  try {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: '__MERMAID_THEME__',
+      securityLevel: 'strict',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
+    });
+    mermaid.run({ querySelector: '.mermaid' }).then(function() {
+      requestAnimationFrame(function() {
+        var bbox = document.body.getBoundingClientRect();
+        window.webkit.messageHandlers.ready.postMessage({
+          width: Math.ceil(bbox.width),
+          height: Math.ceil(bbox.height)
+        });
+      });
+    }).catch(function(err) {
+      var el = document.getElementById('diagram');
+      el.classList.add('err');
+      el.textContent = 'Mermaid error: ' + (err && err.message ? err.message : String(err));
+      window.webkit.messageHandlers.ready.postMessage({ width: 600, height: 80 });
+    });
+  } catch (e) {
+    document.getElementById('diagram').classList.add('err');
+    document.getElementById('diagram').textContent = 'Init error: ' + e.message;
+    window.webkit.messageHandlers.ready.postMessage({ width: 600, height: 80 });
+  }
+})();
+</script>
+</body>
+</html>
