@@ -1,0 +1,143 @@
+# ============================================================================
+# Personal / workspace conventions (mirrored from ~/.gitignore_global so this
+# repo stays self-contained on machines that don't have the global excludes).
+# ============================================================================
+mytasks/
+mydocs/
+mysandbox/
+myscripts/
+archeology/
+.tmp/
+
+# ============================================================================
+# macOS
+# ============================================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ============================================================================
+# Xcode — user-specific state & caches
+# ============================================================================
+# Build products
+build/
+DerivedData/
+
+# Per-user Xcode files
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+# Xcode Workspace (we don't use a top-level .xcworkspace; ignore stray ones)
+*.xcworkspace/xcuserdata/
+*.xcworkspace/contents.xcworkspacedata.tmp
+
+# Other Xcode artefacts
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.moved-aside
+*.perspectivev3
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# ============================================================================
+# Project — xcodeproj is regeneratable via `xcodegen generate`
+# ============================================================================
+MarkdownExplorer.xcodeproj/
+
+# Smoke-test fixtures (regenerable locally; contains a throwaway nested .git)
+sample-notes/
+
+# ============================================================================
+# Code-signing / provisioning (never commit these)
+# ============================================================================
+*.mobileprovision
+*.provisionprofile
+*.p12
+*.cer
+*.certSigningRequest
+
+# ============================================================================
+# Fastlane / Carthage / CocoaPods (in case they're added later)
+# ============================================================================
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+Carthage/Build/
+Carthage/Checkouts/
+
+Pods/
+
+# ============================================================================
+# Editors & tooling
+# ============================================================================
+# Generic
+*.swp
+*.swo
+*~
+.idea/
+*.iml
+.vscode/
+.history/
+.cursor/
+
+# Vim / nano
+*.un~
+Session.vim
+.netrwhist
+
+# Direnv
+.envrc.cache
+
+# ============================================================================
+# Secrets / local config (don't commit by accident)
+# ============================================================================
+.env
+.env.local
+.env.*.local
+*.local.xcconfig
+secrets.json
+
+# ============================================================================
+# Logs / runtime
+# ============================================================================
+*.log
+logs/
+crash-*.log
+nohup.out
