@@ -12,7 +12,6 @@ struct WIPFolderRow: View {
             }
         }
         .padding(.horizontal, 6)
-        .padding(.top, 6)
     }
 
     private var header: some View {
@@ -29,7 +28,8 @@ struct WIPFolderRow: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
+        .padding(.top, 4)
+        .padding(.bottom, 2)
         .contextMenu {
             Button("Reveal in Finder") {
                 store.revealInFinder(folder.url)
@@ -72,7 +72,7 @@ struct WIPFolderRow: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 1)
         .padding(.horizontal, 2)
         .contentShape(Rectangle())
         .background(
