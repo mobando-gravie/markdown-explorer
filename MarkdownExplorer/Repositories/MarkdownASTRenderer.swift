@@ -126,19 +126,44 @@ private struct AttributedStringRenderer {
     private mutating func renderBlockQuote(_ node: BlockQuote) {
         var inner = AttributedStringRenderer(palette: palette)
         for child in node.children { inner.visit(child) }
-        let body = inner.finished
-        let para = NSMutableParagraphStyle()
-        para.headIndent = 20
-        para.firstLineHeadIndent = 20
-        para.paragraphSpacing = 10
-        let m = NSMutableAttributedString(attributedString: body)
-        m.addAttribute(.paragraphStyle, value: para, range: NSRange(location: 0, length: m.length))
-        m.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: m.length)) { value, range, _ in
+        let body = NSMutableAttributedString(attributedString: inner.finished)
+
+        // Build an NSTextBlock for the GitHub-style tinted background with left bar.
+        let block = NSTextBlock()
+        block.setWidth(10, type: .absoluteValueType, for: .padding)
+        block.setWidth(3, type: .absoluteValueType, for: .border, edge: .minX)
+        block.setBorderColor(palette.border)
+        block.backgroundColor = palette.codeBg
+
+        // Apply the block via paragraphStyle.textBlocks to every paragraph in the
+        // quote body, preserving any inner indents (nested lists, etc.).
+        body.enumerateAttribute(.paragraphStyle, in: NSRange(location: 0, length: body.length)) { value, range, _ in
+            let para = NSMutableParagraphStyle()
+            if let style = value as? NSParagraphStyle {
+                para.setParagraphStyle(style)
+            }
+            para.textBlocks = [block]
+            para.paragraphSpacing = 0
+            body.addAttribute(.paragraphStyle, value: para, range: range)
+        }
+        // Mute the body text where it doesn't already have an explicit colour.
+        body.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: body.length)) { value, range, _ in
             if value == nil || (value as? NSColor) == palette.text {
-                m.addAttribute(.foregroundColor, value: palette.muted, range: range)
+                body.addAttribute(.foregroundColor, value: palette.muted, range: range)
             }
         }
-        output.append(m)
+
+        // Make sure the body ends with a newline so the block doesn't bleed
+        // into the next paragraph.
+        if !body.string.hasSuffix("\n") {
+            let trailingPara = NSMutableParagraphStyle()
+            trailingPara.textBlocks = [block]
+            body.append(NSAttributedString(string: "\n", attributes: [.paragraphStyle: trailingPara]))
+        }
+
+        output.append(body)
+        // Spacer after the quote so the next paragraph isn't flush with the block.
+        output.append(NSAttributedString(string: "\n"))
     }
 
     private mutating func renderList(_ items: some Sequence<ListItem>, ordered: Bool, level: Int) {

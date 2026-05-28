@@ -12,34 +12,33 @@ final class SyntaxHighlighter: @unchecked Sendable {
     private init() {}
 
     func highlight(_ code: String, language: String?, isDarkMode: Bool) -> NSAttributedString {
+        // No language tag, or mermaid (handled elsewhere) → plain text.
+        // Matches GitHub's behaviour: ``` without a language renders unstyled.
+        let trimmed = language?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+        guard !trimmed.isEmpty, trimmed != "mermaid" else {
+            return plain(code, isDarkMode: isDarkMode)
+        }
+
         lock.lock()
         defer { lock.unlock() }
         ensureLoaded()
         guard let context else { return plain(code, isDarkMode: isDarkMode) }
 
-        context.setObject(code, forKeyedSubscript: "__src" as NSString)
-        context.setObject(language as Any, forKeyedSubscript: "__lang" as NSString)
-
-        let script: String
-        if let language, !language.isEmpty, !language.lowercased().hasPrefix("mermaid") {
-            script = """
-            (function() {
-              try {
-                if (hljs.getLanguage(__lang)) {
-                  return hljs.highlight(__src, { language: __lang, ignoreIllegals: true }).value;
-                }
-                return hljs.highlightAuto(__src).value;
-              } catch (e) { return null; }
-            })();
-            """
-        } else {
-            script = """
-            (function() {
-              try { return hljs.highlightAuto(__src).value; }
-              catch (e) { return null; }
-            })();
-            """
+        // Only highlight if hljs recognises the language. Don't auto-detect —
+        // it mis-fires on ASCII-art diagrams and random text inside ``` blocks.
+        context.setObject(trimmed, forKeyedSubscript: "__lang" as NSString)
+        guard let recognised = context.evaluateScript("Boolean(hljs.getLanguage(__lang))")?.toBool(), recognised else {
+            return plain(code, isDarkMode: isDarkMode)
         }
+
+        context.setObject(code, forKeyedSubscript: "__src" as NSString)
+        let script = """
+        (function() {
+          try {
+            return hljs.highlight(__src, { language: __lang, ignoreIllegals: true }).value;
+          } catch (e) { return null; }
+        })();
+        """
 
         guard let html = context.evaluateScript(script)?.toString(), !html.isEmpty, html != "undefined" else {
             return plain(code, isDarkMode: isDarkMode)
