@@ -26,6 +26,26 @@ struct MarkdownExplorerApp: App {
                     Task { await store.chooseFolder() }
                 }
                 .keyboardShortcut("o", modifiers: [.command])
+
+                Menu("Open Recent") {
+                    if store.recents.isEmpty {
+                        Text("No recent folders")
+                    } else {
+                        ForEach(store.recents, id: \.self) { url in
+                            Button(url.lastPathComponent) {
+                                Task { await store.openFromRecents(url) }
+                            }
+                        }
+                    }
+                }
+
+                Divider()
+
+                Button("Quick Open…") {
+                    store.isQuickOpenPresented = true
+                }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+                .disabled(store.rootURL == nil)
             }
         }
     }

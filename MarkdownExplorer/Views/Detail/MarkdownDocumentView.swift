@@ -2,15 +2,15 @@ import MarkdownUI
 import SwiftUI
 
 struct MarkdownDocumentView: View {
+    @Environment(WorkspaceStore.self) private var store
     let source: String
     let fileName: String
+    let fileURL: URL
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(fileName)
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                DocumentHeader(fileName: fileName, source: source)
 
                 Markdown(source)
                     .markdownTheme(.gitHub)
@@ -19,7 +19,7 @@ struct MarkdownDocumentView: View {
                             MermaidWebView(source: config.content)
                                 .padding(.vertical, 4)
                         } else {
-                            DefaultCodeBlock(configuration: config)
+                            HighlightedCodeBlock(configuration: config)
                         }
                     }
                     .markdownTextStyle(\.code) {
@@ -31,36 +31,34 @@ struct MarkdownDocumentView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(24)
         }
+        .environment(\.openURL, OpenURLAction { url in
+            store.navigateToLink(url, from: fileURL) ? .handled : .systemAction
+        })
     }
 }
 
-private struct DefaultCodeBlock: View {
-    let configuration: CodeBlockConfiguration
+private struct DocumentHeader: View {
+    let fileName: String
+    let source: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if let language = configuration.language, !language.isEmpty {
-                Text(language)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .background(Color.secondary.opacity(0.08))
-            }
-            ScrollView(.horizontal, showsIndicators: false) {
-                Text(configuration.content)
-                    .font(.system(.callout, design: .monospaced))
-                    .textSelection(.enabled)
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+        VStack(alignment: .leading, spacing: 4) {
+            Text(fileName)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(metrics)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
-        .background(Color.secondary.opacity(0.10))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-        )
+    }
+
+    private var metrics: String {
+        let wordCount = source
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty && $0.rangeOfCharacter(from: .letters) != nil }
+            .count
+        let minutes = max(1, Int((Double(wordCount) / 200.0).rounded(.up)))
+        return "\(wordCount) words · \(minutes) min read"
     }
 }
+

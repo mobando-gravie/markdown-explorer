@@ -29,6 +29,11 @@ struct WIPFolderRow: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
+        .contextMenu {
+            Button("Reveal in Finder") {
+                store.revealInFinder(folder.url)
+            }
+        }
     }
 
     @ViewBuilder
@@ -73,6 +78,11 @@ struct WIPFolderRow: View {
         )
         .onTapGesture {
             store.select(file.node)
+        }
+        .contextMenu {
+            Button("Reveal in Finder") {
+                store.revealInFinder(file.node.url)
+            }
         }
     }
 }

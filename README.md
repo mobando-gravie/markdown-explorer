@@ -20,7 +20,13 @@ Alternatively, after the first refused launch, **System Settings → Privacy & S
 - **Two sidebar modes**
   - **Explore** — recursive lazy-loaded file tree, like Finder's column view.
   - **In progress** — historical project list; folders sorted by most-recent `.md` edit, with smart per-project hot/cold polling so the sidebar stays fresh without thrashing the filesystem.
-- **GFM rendering** — headings, lists, task lists, blockquotes, syntax-highlighted code, tables, images, links — via [swift-markdown-ui](https://github.com/gonzalezreal/swift-markdown-ui).
+- **Syntax-highlighted code blocks** — ~38 languages via bundled highlight.js running in `JavaScriptCore`. Light/dark themes auto-follow the system.
+- **Copy button on code blocks** — hover to reveal; one click puts the raw source on your clipboard.
+- **Markdown link navigation** — internal `[link](./other.md)` references load the target file; external links open in your browser.
+- **Quick Open** (⌘⇧O) — fuzzy-search any `.md` file in the workspace.
+- **Reveal in Finder** — right-click any file row in the sidebar.
+- **Recent folders** — `File → Open Recent` keeps the last 5 workspaces.
+- **GFM rendering** — headings, lists, task lists, blockquotes, code, tables, images, links — via [swift-markdown-ui](https://github.com/gonzalezreal/swift-markdown-ui).
 - **Mermaid diagrams** — ` ```mermaid ` fenced blocks render as live SVG via a bundled `mermaid.min.js` running in a `WKWebView` (no network at runtime).
 - **Sandboxed, with persisted folder access** — uses security-scoped bookmarks so the last folder reopens automatically across launches.
 - **Auto-discovery of project roots** — the In-progress mode walks each folder's ancestors looking for markers (`.git`, `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `Package.swift`, `Gemfile`, `composer.json`, `mix.exs`, `Makefile`, `CMakeLists.txt`, `pom.xml`, `build.gradle[.kts]`, `.hg`, `.svn`, `.idea`, `.vscode`, `node_modules`, `Pods`, `Carthage`, `vendor`, `.venv`, `venv`, `.gradle`, `*.xcodeproj/`) to label rows as `project › parent`.
@@ -156,6 +162,7 @@ markdown-explorer/
 - **[Tabler Icons](https://tabler.io/icons)** (MIT) — `folder-search` is the basis for the app icon.
 - **[swift-markdown-ui](https://github.com/gonzalezreal/swift-markdown-ui)** (MIT) — GFM rendering engine.
 - **[Mermaid](https://mermaid.js.org/)** (MIT) — diagram rendering inside fenced code blocks.
+- **[highlight.js](https://highlightjs.org/)** (BSD-3-Clause) — syntax highlighting (~38 languages).
 - **[xcodegen](https://github.com/yonaskolb/XcodeGen)** (MIT) — project file generation.
 - Apple SF Symbols — toolbar and sidebar iconography.
 

@@ -21,7 +21,7 @@ struct DetailView: View {
     @ViewBuilder
     private var content: some View {
         if let selected = store.selectedURL, let text = store.documentText {
-            MarkdownDocumentView(source: text, fileName: selected.lastPathComponent)
+            MarkdownDocumentView(source: text, fileName: selected.lastPathComponent, fileURL: selected)
         } else {
             EmptyStateView()
         }

@@ -39,6 +39,11 @@ struct FileNodeRow: View {
         .onTapGesture {
             store.select(node)
         }
+        .contextMenu {
+            Button("Reveal in Finder") {
+                store.revealInFinder(node.url)
+            }
+        }
     }
 
     @ViewBuilder

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 
@@ -14,11 +15,20 @@ final class WorkspaceStore {
 
     var errorMessage: String?
 
+    private(set) var recents: [URL] = []
     private(set) var sidebarMode: SidebarMode = .wip
     private(set) var wipFolders: [WIPFolder] = []
     private(set) var lastBootstrapAt: Date?
     private(set) var isScanning: Bool = false
     private(set) var projectStates: [URL: ProjectState] = [:]
+
+    var isQuickOpenPresented: Bool = false
+
+    var allMarkdownURLs: [URL] {
+        projectStates.values
+            .flatMap(\.folders)
+            .flatMap { $0.files.map(\.node.url) }
+    }
 
     private let fileSystem: FileSystemRepository
     private let bookmarks: BookmarkRepository
@@ -33,6 +43,12 @@ final class WorkspaceStore {
     init(fileSystem: FileSystemRepository, bookmarks: BookmarkRepository) {
         self.fileSystem = fileSystem
         self.bookmarks = bookmarks
+        self.recents = bookmarks.restoreRecents()
+    }
+
+    func openFromRecents(_ url: URL) async {
+        _ = url.startAccessingSecurityScopedResource()
+        await applyRoot(url, persist: true)
     }
 
     func restorePersistedRoot() async {
@@ -60,6 +76,37 @@ final class WorkspaceStore {
                 loadChildren(of: url)
             }
         }
+    }
+
+    func selectFile(at url: URL) {
+        select(makeNode(for: url))
+    }
+
+    func navigateToLink(_ url: URL, from currentDoc: URL?) -> Bool {
+        guard let root = rootURL else { return false }
+
+        let resolved: URL
+        if url.scheme == nil || url.scheme == "file" {
+            let base = currentDoc?.deletingLastPathComponent() ?? root
+            let raw = url.relativePath.isEmpty ? url.path : url.relativePath
+            resolved = URL(fileURLWithPath: raw, relativeTo: base).standardizedFileURL
+        } else {
+            return false
+        }
+
+        let ext = resolved.pathExtension.lowercased()
+        guard FileNode.markdownExtensions.contains(ext) else { return false }
+        guard FileManager.default.fileExists(atPath: resolved.path) else { return false }
+
+        let rootPath = root.standardizedFileURL.path
+        guard resolved.path.hasPrefix(rootPath) else { return false }
+
+        selectFile(at: resolved)
+        return true
+    }
+
+    func revealInFinder(_ url: URL) {
+        NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
     func select(_ node: FileNode) {
@@ -198,6 +245,8 @@ final class WorkspaceStore {
         if persist {
             do {
                 try bookmarks.save(url)
+                try bookmarks.saveRecent(url)
+                recents = bookmarks.restoreRecents()
             } catch {
                 errorMessage = "Could not remember this folder: \(error.localizedDescription)"
             }

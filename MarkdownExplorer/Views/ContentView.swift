@@ -5,13 +5,18 @@ struct ContentView: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
+        @Bindable var bindable = store
+        return NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView()
                 .navigationSplitViewColumnWidth(min: 200, ideal: 280, max: 500)
         } detail: {
             DetailView()
         }
         .navigationTitle(store.rootURL?.lastPathComponent ?? "Markdown Explorer")
+        .sheet(isPresented: $bindable.isQuickOpenPresented) {
+            QuickOpenView()
+                .environment(store)
+        }
         .toolbar {
             if columnVisibility != .detailOnly {
                 ToolbarItem(placement: .navigation) {
