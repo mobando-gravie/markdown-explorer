@@ -4,6 +4,17 @@ A native macOS SwiftUI app for browsing and reading folders of Markdown files. T
 
 <!-- screenshot here -->
 
+## Install
+
+Grab the latest `.dmg` from the [Releases](https://github.com/mobando-gravie/markdown-explorer/releases) page, open it, and drag **Markdown Explorer** to your **Applications** folder.
+
+**First launch** — because this build isn't notarized (no paid Apple Developer ID yet), macOS will refuse to open it with a "cannot check for malicious software" warning. To bypass once:
+
+- In Finder, **right-click** (or Control-click) the app → **Open** → click **Open** in the dialog.
+- macOS remembers the choice; subsequent launches are normal.
+
+Alternatively, after the first refused launch, **System Settings → Privacy & Security → Open Anyway** works too.
+
 ## Features
 
 - **Two sidebar modes**
@@ -17,10 +28,14 @@ A native macOS SwiftUI app for browsing and reading folders of Markdown files. T
 ## Requirements
 
 - macOS 14 Sonoma or later
-- Xcode 26 or later
-- [xcodegen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
+- Apple Silicon (arm64)
+- For building from source: Xcode 26+, [xcodegen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
 
-## Quickstart
+## Build from source
+
+If you'd rather build it yourself instead of using the release DMG:
+
+### Quickstart
 
 ```sh
 brew install xcodegen
@@ -40,6 +55,16 @@ xcodebuild -project MarkdownExplorer.xcodeproj \
            build
 open ~/Library/Developer/Xcode/DerivedData/MarkdownExplorer-*/Build/Products/Debug/MarkdownExplorer.app
 ```
+
+### Cutting a release
+
+To produce a distributable `.dmg` and publish it as a GitHub release:
+
+```sh
+scripts/release.sh 0.1.0   # version, no `v` prefix
+```
+
+The script builds Release config, packages the `.app` into a DMG via `hdiutil`, tags `v0.1.0`, pushes the tag, and calls `gh release create` with notes from `docs/releases/v0.1.0.md`. It refuses to run if the git tree isn't clean, the tag already exists, or the notes file is missing.
 
 ## Usage
 
