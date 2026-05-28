@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MarkdownDocumentView: View {
     @Environment(WorkspaceStore.self) private var store
+    @Environment(\.colorScheme) private var colorScheme
     let source: String
     let fileName: String
     let fileURL: URL
@@ -22,6 +23,7 @@ struct MarkdownDocumentView: View {
                             HighlightedCodeBlock(configuration: config)
                         }
                     }
+                    .markdownCodeSyntaxHighlighter(.highlightJS(colorScheme: colorScheme))
                     .markdownTextStyle(\.code) {
                         FontFamilyVariant(.monospaced)
                         FontSize(.em(0.95))

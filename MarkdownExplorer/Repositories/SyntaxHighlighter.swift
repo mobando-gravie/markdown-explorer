@@ -1,17 +1,35 @@
 import AppKit
 import JavaScriptCore
+import MarkdownUI
 import SwiftUI
 
-@MainActor
-final class HighlightEngine {
+struct HighlightJSCodeSyntaxHighlighter: CodeSyntaxHighlighter {
+    let colorScheme: ColorScheme
+
+    func highlightCode(_ content: String, language: String?) -> Text {
+        let attr = HighlightEngine.shared.highlight(content, language: language, colorScheme: colorScheme)
+        return Text(attr)
+    }
+}
+
+extension CodeSyntaxHighlighter where Self == HighlightJSCodeSyntaxHighlighter {
+    static func highlightJS(colorScheme: ColorScheme) -> Self {
+        HighlightJSCodeSyntaxHighlighter(colorScheme: colorScheme)
+    }
+}
+
+final class HighlightEngine: @unchecked Sendable {
     static let shared = HighlightEngine()
 
     private var context: JSContext?
     private var loaded = false
+    private let lock = NSLock()
 
     private init() {}
 
     func highlight(_ code: String, language: String?, colorScheme: ColorScheme) -> AttributedString {
+        lock.lock()
+        defer { lock.unlock() }
         ensureLoaded()
         guard let context else { return plain(code) }
 

@@ -5,7 +5,6 @@ import SwiftUI
 struct HighlightedCodeBlock: View {
     let configuration: CodeBlockConfiguration
 
-    @Environment(\.colorScheme) private var colorScheme
     @State private var isHovering = false
     @State private var didCopy = false
 
@@ -21,7 +20,11 @@ struct HighlightedCodeBlock: View {
                     .background(Color.secondary.opacity(0.08))
             }
             ScrollView(.horizontal, showsIndicators: false) {
-                Text(highlighted)
+                configuration.label
+                    .markdownTextStyle {
+                        FontFamilyVariant(.monospaced)
+                        FontSize(.em(0.95))
+                    }
                     .textSelection(.enabled)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -35,14 +38,6 @@ struct HighlightedCodeBlock: View {
         )
         .overlay(alignment: .topTrailing) { copyButton }
         .onHover { isHovering = $0 }
-    }
-
-    private var highlighted: AttributedString {
-        HighlightEngine.shared.highlight(
-            configuration.content,
-            language: configuration.language,
-            colorScheme: colorScheme
-        )
     }
 
     @ViewBuilder
