@@ -31,7 +31,7 @@ struct Palette {
             muted = NSColor(white: 0.55, alpha: 1)
             link = NSColor(red: 0.27, green: 0.58, blue: 0.97, alpha: 1)
             codeBg = NSColor(red: 0.09, green: 0.11, blue: 0.13, alpha: 1)
-            inlineCodeBg = NSColor(red: 0.18, green: 0.21, blue: 0.25, alpha: 1)
+            inlineCodeBg = NSColor(red: 0.20, green: 0.24, blue: 0.30, alpha: 1)
             border = NSColor(red: 0.20, green: 0.23, blue: 0.27, alpha: 1)
             headerBg = NSColor(red: 0.13, green: 0.16, blue: 0.20, alpha: 1)
         } else {
@@ -39,7 +39,7 @@ struct Palette {
             muted = NSColor(white: 0.45, alpha: 1)
             link = NSColor(red: 0.04, green: 0.41, blue: 0.85, alpha: 1)
             codeBg = NSColor(red: 0.96, green: 0.97, blue: 0.98, alpha: 1)
-            inlineCodeBg = NSColor(red: 0.92, green: 0.93, blue: 0.94, alpha: 1)
+            inlineCodeBg = NSColor(red: 0.90, green: 0.92, blue: 0.94, alpha: 1)
             border = NSColor(red: 0.86, green: 0.88, blue: 0.90, alpha: 1)
             headerBg = NSColor(red: 0.96, green: 0.97, blue: 0.98, alpha: 1)
         }
@@ -89,7 +89,11 @@ private struct AttributedStringRenderer {
     private mutating func renderHeading(_ node: Heading) {
         let inline = renderInlines(node.inlineChildren, baseFont: headingFont(level: node.level), color: palette.text)
         let para = NSMutableParagraphStyle()
-        para.paragraphSpacingBefore = node.level <= 2 ? 18 : 12
+        switch node.level {
+        case 1: para.paragraphSpacingBefore = 24
+        case 2: para.paragraphSpacingBefore = 20
+        default: para.paragraphSpacingBefore = 14
+        }
         para.paragraphSpacing = 8
         para.lineSpacing = 1
         let m = NSMutableAttributedString(attributedString: inline)
@@ -140,17 +144,20 @@ private struct AttributedStringRenderer {
     private mutating func renderList(_ items: some Sequence<ListItem>, ordered: Bool, level: Int) {
         var index = 1
         for item in items {
-            let marker = ordered ? "\(index).\u{00A0}" : "•\u{00A0}"
             let para = NSMutableParagraphStyle()
-            para.headIndent = CGFloat(20 + level * 20)
+            para.headIndent = CGFloat(28 + level * 20)
             para.firstLineHeadIndent = CGFloat(level * 20)
             para.paragraphSpacing = 4
             para.lineSpacing = 3
 
-            // task list?
-            var markerText = marker
+            // Marker glyph
+            let markerText: String
             if let checkbox = item.checkbox {
-                markerText = (checkbox == .checked ? "☑\u{00A0}" : "☐\u{00A0}")
+                markerText = (checkbox == .checked ? "☑\u{00A0}\u{00A0}" : "☐\u{00A0}\u{00A0}")
+            } else if ordered {
+                markerText = "\(index).\u{00A0}\u{00A0}"
+            } else {
+                markerText = "•\u{00A0}\u{00A0}"
             }
 
             let markerAttr = NSAttributedString(string: markerText, attributes: [
@@ -162,7 +169,7 @@ private struct AttributedStringRenderer {
             // Render the item body recursively (handles nested lists, paragraphs, etc.)
             var inner = AttributedStringRenderer(palette: palette)
             for child in item.children { inner.visit(child) }
-            var body = NSMutableAttributedString(attributedString: inner.finished)
+            let body = NSMutableAttributedString(attributedString: inner.finished)
             // Trim trailing newline so the marker stays on the same line as content
             while body.string.hasSuffix("\n\n") {
                 body.deleteCharacters(in: NSRange(location: body.length - 1, length: 1))
@@ -259,16 +266,30 @@ private struct AttributedStringRenderer {
         table.layoutAlgorithm = .automaticLayoutAlgorithm
         table.collapsesBorders = true
 
-        appendRow(node.head.cells, table: table, isHeader: true)
+        var rowIndex = 0
+        appendRow(node.head.cells, table: table, rowIndex: rowIndex, isHeader: true)
+        rowIndex += 1
         for row in node.body.rows {
-            appendRow(row.cells, table: table, isHeader: false)
+            appendRow(row.cells, table: table, rowIndex: rowIndex, isHeader: false)
+            rowIndex += 1
         }
         output.append(NSAttributedString(string: "\n"))
     }
 
-    private mutating func appendRow(_ cells: some Sequence<Table.Cell>, table: NSTextTable, isHeader: Bool) {
-        for cell in cells {
-            let block = NSTextTableBlock(table: table, startingRow: -1, rowSpan: 1, startingColumn: -1, columnSpan: 1)
+    private mutating func appendRow(
+        _ cells: some Sequence<Table.Cell>,
+        table: NSTextTable,
+        rowIndex: Int,
+        isHeader: Bool
+    ) {
+        for (colIndex, cell) in cells.enumerated() {
+            let block = NSTextTableBlock(
+                table: table,
+                startingRow: rowIndex,
+                rowSpan: 1,
+                startingColumn: colIndex,
+                columnSpan: 1
+            )
             block.setWidth(8, type: .absoluteValueType, for: .padding)
             block.setWidth(1, type: .absoluteValueType, for: .border)
             block.setBorderColor(palette.border)
@@ -337,7 +358,8 @@ private struct AttributedStringRenderer {
             return m
         case let node as InlineCode:
             let monoSize = baseFont.pointSize * 0.92
-            return NSAttributedString(string: node.code, attributes: [
+            // Pad the run with hair spaces so the background isn't flush with surrounding glyphs
+            return NSAttributedString(string: "\u{200A}\(node.code)\u{200A}", attributes: [
                 .font: NSFont.monospacedSystemFont(ofSize: monoSize, weight: .regular),
                 .foregroundColor: color,
                 .backgroundColor: palette.inlineCodeBg
@@ -372,9 +394,9 @@ private struct AttributedStringRenderer {
 
     private func headingFont(level: Int) -> NSFont {
         switch level {
-        case 1: return NSFont.systemFont(ofSize: 26, weight: .bold)
-        case 2: return NSFont.systemFont(ofSize: 22, weight: .semibold)
-        case 3: return NSFont.systemFont(ofSize: 18, weight: .semibold)
+        case 1: return NSFont.systemFont(ofSize: 32, weight: .bold)
+        case 2: return NSFont.systemFont(ofSize: 24, weight: .bold)
+        case 3: return NSFont.systemFont(ofSize: 19, weight: .semibold)
         case 4: return NSFont.systemFont(ofSize: 16, weight: .semibold)
         case 5: return NSFont.systemFont(ofSize: 14, weight: .semibold)
         default: return NSFont.systemFont(ofSize: 13, weight: .semibold)
