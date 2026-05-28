@@ -34,6 +34,9 @@ struct WIPFolderRow: View {
             Button("Reveal in Finder") {
                 store.revealInFinder(folder.url)
             }
+            Button("Copy Path") {
+                store.copyPath(folder.url)
+            }
         }
     }
 
@@ -83,6 +86,9 @@ struct WIPFolderRow: View {
         .contextMenu {
             Button("Reveal in Finder") {
                 store.revealInFinder(file.node.url)
+            }
+            Button("Copy Path") {
+                store.copyPath(file.node.url)
             }
         }
     }

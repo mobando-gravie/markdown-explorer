@@ -109,6 +109,12 @@ final class WorkspaceStore {
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
+    func copyPath(_ url: URL) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(url.path(percentEncoded: false), forType: .string)
+    }
+
     func select(_ node: FileNode) {
         if node.isDirectory {
             toggleExpanded(node.url)

@@ -43,6 +43,9 @@ struct FileNodeRow: View {
             Button("Reveal in Finder") {
                 store.revealInFinder(node.url)
             }
+            Button("Copy Path") {
+                store.copyPath(node.url)
+            }
         }
     }
 
