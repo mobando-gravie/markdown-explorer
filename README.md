@@ -28,7 +28,7 @@ Alternatively, after the first refused launch, **System Settings → Privacy & S
 - **Markdown link navigation** — internal `[link](./other.md)` references load the target file; external links open in your browser.
 - **Quick Open** (⌘⇧O) — fuzzy-search any `.md` file in the workspace.
 - **Find in document** — ⌘F brings up the native NSTextView find bar.
-- **Reveal in Finder** — right-click any file row in the sidebar.
+- **Reveal in Finder** / **Copy Path** — right-click any file row (or any folder header in the In progress view) to jump to it in Finder or put its absolute path on the clipboard.
 - **Recent folders** — `File → Open Recent` keeps the last 5 workspaces.
 - **Sandboxed, with persisted folder access** — uses security-scoped bookmarks so the last folder reopens automatically across launches.
 - **Auto-discovery of project roots** — the In-progress mode walks each folder's ancestors looking for markers (`.git`, `package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`, `Package.swift`, `Gemfile`, `composer.json`, `mix.exs`, `Makefile`, `CMakeLists.txt`, `pom.xml`, `build.gradle[.kts]`, `.hg`, `.svn`, `.idea`, `.vscode`, `node_modules`, `Pods`, `Carthage`, `vendor`, `.venv`, `venv`, `.gradle`, `*.xcodeproj/`) to label rows as `project › parent`.
@@ -69,10 +69,10 @@ open ~/Library/Developer/Xcode/DerivedData/MarkdownExplorer-*/Build/Products/Deb
 To produce a distributable `.dmg` and publish it as a GitHub release:
 
 ```sh
-scripts/release.sh 0.1.0   # version, no `v` prefix
+scripts/release.sh 0.3.6   # version, no `v` prefix
 ```
 
-The script builds Release config, packages the `.app` into a DMG via `hdiutil`, tags `v0.1.0`, pushes the tag, and calls `gh release create` with notes from `docs/releases/v0.1.0.md`. It refuses to run if the git tree isn't clean, the tag already exists, or the notes file is missing.
+The script builds Release config, packages the `.app` into a DMG via `hdiutil`, tags `v0.3.6`, pushes the tag, and calls `gh release create` with notes from `docs/releases/v0.3.6.md`. It refuses to run if the git tree isn't clean, the tag already exists, or the notes file is missing.
 
 ## Usage
 
@@ -142,19 +142,25 @@ markdown-explorer/
 ├── MarkdownExplorer/
 │   ├── App/                       @main entry, scene wiring
 │   ├── Models/                    FileNode, SidebarMode, WIPFolder, ProjectState
-│   ├── Repositories/              FileSystemRepository, BookmarkRepository
+│   ├── Repositories/              FileSystemRepository, BookmarkRepository,
+│   │                              MarkdownASTRenderer, SyntaxHighlighter,
+│   │                              MermaidRenderer
 │   ├── Stores/                    WorkspaceStore (the single orchestrator)
+│   ├── Utilities/                 FuzzyMatch
 │   ├── Views/
 │   │   ├── ContentView.swift      NavigationSplitView shell + toolbar
 │   │   ├── Sidebar/               SidebarView, FileTreeView, FileNodeRow,
 │   │   │                          WIPFoldersView, WIPFolderRow
+│   │   ├── QuickOpen/             QuickOpenView (⌘⇧O fuzzy file search)
 │   │   └── Detail/                DetailView, EmptyStateView,
-│   │                              MarkdownDocumentView, MermaidWebView
+│   │                              MarkdownDocumentView, DocumentWebView
 │   ├── Resources/                 mermaid.min.js, mermaid-host.html,
-│   │                              AppIcon-source.svg
+│   │                              highlight.min.js, AppIcon-source.svg
 │   ├── Assets.xcassets/           AppIcon
 │   ├── Info.plist
 │   └── MarkdownExplorer.entitlements
+├── scripts/                       release.sh (build → DMG → tag → gh release)
+├── docs/releases/                 per-version release notes
 ├── project.yml                    xcodegen spec (single source of truth)
 ├── README.md
 ├── LICENSE
