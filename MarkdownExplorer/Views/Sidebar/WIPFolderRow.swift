@@ -5,13 +5,14 @@ struct WIPFolderRow: View {
     let folder: WIPFolder
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 0) {
             header
             ForEach(folder.files) { file in
                 fileRow(file)
             }
         }
         .padding(.horizontal, 6)
+        .padding(.top, 6)
     }
 
     private var header: some View {

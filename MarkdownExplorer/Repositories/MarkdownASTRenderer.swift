@@ -204,30 +204,53 @@ private struct AttributedStringRenderer {
 
         let highlighted = SyntaxHighlighter.shared.highlight(code, language: lang, isDarkMode: palette.isDarkMode)
         let m = NSMutableAttributedString(attributedString: highlighted)
-        let para = NSMutableParagraphStyle()
-        para.paragraphSpacing = 8
-        para.paragraphSpacingBefore = 8
-        para.headIndent = 12
-        para.firstLineHeadIndent = 12
-        para.tailIndent = -12
-        para.lineSpacing = 2
-        m.addAttribute(.paragraphStyle, value: para, range: NSRange(location: 0, length: m.length))
+
+        // Inner paragraph style: no spacing between code lines.
+        let innerPara = NSMutableParagraphStyle()
+        innerPara.paragraphSpacing = 0
+        innerPara.paragraphSpacingBefore = 0
+        innerPara.lineSpacing = 0
+        innerPara.headIndent = 12
+        innerPara.firstLineHeadIndent = 12
+        innerPara.tailIndent = -12
+        m.addAttribute(.paragraphStyle, value: innerPara, range: NSRange(location: 0, length: m.length))
         m.addAttribute(.backgroundColor, value: palette.codeBg, range: NSRange(location: 0, length: m.length))
 
-        // Pad top and bottom so the background block has breathing room
-        let topPad = NSAttributedString(string: "\n", attributes: [
-            .font: NSFont.systemFont(ofSize: 6),
+        // Bookend the block with tiny padded lines so the background extends a bit
+        // above and below the first/last line of code without adding inter-line space.
+        let padPara = NSMutableParagraphStyle()
+        padPara.paragraphSpacing = 0
+        padPara.paragraphSpacingBefore = 8
+        padPara.headIndent = 12
+        padPara.firstLineHeadIndent = 12
+        padPara.tailIndent = -12
+
+        let topPad = NSAttributedString(string: "\u{00A0}\n", attributes: [
+            .font: NSFont.systemFont(ofSize: 4),
             .backgroundColor: palette.codeBg,
-            .paragraphStyle: para
+            .foregroundColor: NSColor.clear,
+            .paragraphStyle: padPara
         ])
+        let bottomPadPara = NSMutableParagraphStyle()
+        bottomPadPara.setParagraphStyle(innerPara)
+        bottomPadPara.paragraphSpacing = 8
+        let bottomPad = NSAttributedString(string: "\u{00A0}\n", attributes: [
+            .font: NSFont.systemFont(ofSize: 4),
+            .backgroundColor: palette.codeBg,
+            .foregroundColor: NSColor.clear,
+            .paragraphStyle: bottomPadPara
+        ])
+
         output.append(topPad)
         output.append(m)
-        output.append(NSAttributedString(string: "\n", attributes: [
-            .font: NSFont.systemFont(ofSize: 6),
-            .backgroundColor: palette.codeBg,
-            .paragraphStyle: para
-        ]))
-        output.append(NSAttributedString(string: "\n"))
+        // Ensure last code line terminates so the bottom pad starts a fresh paragraph
+        if !m.string.hasSuffix("\n") {
+            output.append(NSAttributedString(string: "\n", attributes: [
+                .backgroundColor: palette.codeBg,
+                .paragraphStyle: innerPara
+            ]))
+        }
+        output.append(bottomPad)
     }
 
     private mutating func renderMermaid(source: String) {
