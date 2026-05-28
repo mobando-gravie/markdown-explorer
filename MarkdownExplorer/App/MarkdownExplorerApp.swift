@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 @main
@@ -8,6 +9,14 @@ struct MarkdownExplorerApp: App {
         let fs = DefaultFileSystemRepository()
         let bookmarks = DefaultBookmarkRepository()
         _store = State(initialValue: WorkspaceStore(fileSystem: fs, bookmarks: bookmarks))
+        Self.seedAppearanceIfNeeded()
+    }
+
+    private static func seedAppearanceIfNeeded() {
+        let key = "preferDarkMode"
+        guard UserDefaults.standard.object(forKey: key) == nil else { return }
+        let isDark = NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        UserDefaults.standard.set(isDark, forKey: key)
     }
 
     var body: some Scene {

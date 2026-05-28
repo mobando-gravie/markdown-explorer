@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(WorkspaceStore.self) private var store
+    @AppStorage("preferDarkMode") private var preferDarkMode: Bool = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
@@ -17,6 +18,7 @@ struct ContentView: View {
             QuickOpenView()
                 .environment(store)
         }
+        .preferredColorScheme(preferDarkMode ? .dark : .light)
         .toolbar {
             if columnVisibility != .detailOnly {
                 ToolbarItem(placement: .navigation) {
@@ -33,12 +35,20 @@ struct ContentView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
+                    preferDarkMode.toggle()
+                } label: {
+                    Image(systemName: preferDarkMode ? "sun.max" : "moon")
+                }
+                .help(preferDarkMode ? "Switch to Light mode" : "Switch to Dark mode")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
                     store.refresh()
                 } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .disabled(store.rootURL == nil)
-                .help("Refresh file tree")
+                .help("Refresh")
             }
         }
     }

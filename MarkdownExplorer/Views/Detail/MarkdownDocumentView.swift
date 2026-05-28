@@ -1,41 +1,35 @@
-import MarkdownUI
 import SwiftUI
 
 struct MarkdownDocumentView: View {
     @Environment(WorkspaceStore.self) private var store
-    @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("preferDarkMode") private var preferDarkMode: Bool = false
     let source: String
     let fileName: String
     let fileURL: URL
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                DocumentHeader(fileName: fileName, source: source)
-
-                Markdown(source)
-                    .markdownTheme(.gitHub)
-                    .markdownBlockStyle(\.codeBlock) { config in
-                        if config.language?.lowercased() == "mermaid" {
-                            MermaidWebView(source: config.content)
-                                .padding(.vertical, 4)
-                        } else {
-                            HighlightedCodeBlock(configuration: config)
-                        }
-                    }
-                    .markdownCodeSyntaxHighlighter(.highlightJS(colorScheme: colorScheme))
-                    .markdownTextStyle(\.code) {
-                        FontFamilyVariant(.monospaced)
-                        FontSize(.em(0.95))
-                        BackgroundColor(Color.secondary.opacity(0.15))
-                    }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(24)
+        VStack(spacing: 0) {
+            DocumentHeader(fileName: fileName, source: source)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
+            Divider()
+            DocumentWebView(
+                html: html,
+                baseURL: fileURL.deletingLastPathComponent(),
+                onNavigate: { url in store.navigateToLink(url, from: fileURL) }
+            )
         }
-        .environment(\.openURL, OpenURLAction { url in
-            store.navigateToLink(url, from: fileURL) ? .handled : .systemAction
-        })
+    }
+
+    private var html: String {
+        MarkdownHTMLRenderer.render(
+            DocumentRenderRequest(
+                source: source,
+                baseURL: fileURL.deletingLastPathComponent(),
+                isDarkMode: preferDarkMode
+            )
+        ) ?? "<html><body><pre>Render failed</pre></body></html>"
     }
 }
 
@@ -52,6 +46,7 @@ private struct DocumentHeader: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var metrics: String {
@@ -63,4 +58,3 @@ private struct DocumentHeader: View {
         return "\(wordCount) words · \(minutes) min read"
     }
 }
-
