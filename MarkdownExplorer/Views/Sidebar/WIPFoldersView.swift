@@ -51,7 +51,7 @@ struct WIPFoldersView: View {
             }
         } else {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
                     ForEach(store.wipFolders) { folder in
                         WIPFolderRow(folder: folder)
                     }

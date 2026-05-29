@@ -56,6 +56,35 @@ struct MarkdownExplorerApp: App {
                 .keyboardShortcut("o", modifiers: [.command, .shift])
                 .disabled(store.rootURL == nil)
             }
+
+            CommandGroup(after: .textEditing) {
+                Section {
+                    Button("Find…") { Self.performFindAction(.showFindInterface) }
+                        .keyboardShortcut("f", modifiers: .command)
+                    Button("Find Next") { Self.performFindAction(.nextMatch) }
+                        .keyboardShortcut("g", modifiers: .command)
+                    Button("Find Previous") { Self.performFindAction(.previousMatch) }
+                        .keyboardShortcut("g", modifiers: [.command, .shift])
+                }
+            }
         }
+    }
+
+    private static func performFindAction(_ action: NSTextFinder.Action) {
+        guard let window = NSApp.keyWindow,
+              let textView = firstTextView(in: window.contentView) else { return }
+        window.makeFirstResponder(textView)
+        let sender = NSMenuItem()
+        sender.tag = action.rawValue
+        textView.performTextFinderAction(sender)
+    }
+
+    private static func firstTextView(in view: NSView?) -> NSTextView? {
+        guard let view else { return nil }
+        if let tv = view as? NSTextView { return tv }
+        for sub in view.subviews {
+            if let tv = firstTextView(in: sub) { return tv }
+        }
+        return nil
     }
 }
