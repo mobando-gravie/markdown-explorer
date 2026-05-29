@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct MarkdownExplorerApp: App {
     @State private var store: WorkspaceStore
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let fs = DefaultFileSystemRepository()
@@ -26,6 +27,16 @@ struct MarkdownExplorerApp: App {
                 .frame(minWidth: 700, minHeight: 500)
                 .task {
                     await store.restorePersistedRoot()
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    switch newPhase {
+                    case .active:
+                        store.handleAppDidBecomeActive()
+                    case .inactive, .background:
+                        store.handleAppDidResignActive()
+                    @unknown default:
+                        break
+                    }
                 }
         }
         .windowToolbarStyle(.unified)

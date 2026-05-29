@@ -34,6 +34,7 @@ final class WorkspaceStore {
     private let bookmarks: BookmarkRepository
 
     private var wipTimer: Timer?
+    private var isAppActive: Bool = true
     private static let tickInterval: TimeInterval = 60
     private static let hotWindow: TimeInterval = 30 * 60
     private static let coldRescanInterval: TimeInterval = 30 * 60
@@ -170,11 +171,32 @@ final class WorkspaceStore {
         if rootURL != nil, projectStates.isEmpty || lastBootstrapAt == nil {
             Task { await bootstrap() }
         }
+        guard isAppActive else { return }
+        startWIPTimer()
+    }
+
+    private func startWIPTimer() {
         wipTimer = Timer.scheduledTimer(withTimeInterval: Self.tickInterval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.tick()
             }
         }
+    }
+
+    func handleAppDidBecomeActive() {
+        guard !isAppActive else { return }
+        isAppActive = true
+        guard sidebarMode == .wip, rootURL != nil else { return }
+        Task { @MainActor in
+            await tick()
+            if wipTimer == nil { startWIPTimer() }
+        }
+    }
+
+    func handleAppDidResignActive() {
+        guard isAppActive else { return }
+        isAppActive = false
+        stopWIPTimer()
     }
 
     func bootstrap() async {
